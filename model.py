@@ -39,103 +39,9 @@ class ConvBlock(nn.Module):
 
         return x
 
-
-class TCN_Block(nn.Module):
-
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-
-        self.padding1 = nn.ConstantPad1d((3, 0), 0.0)
-        self.conv1 = nn.Conv1d(16, 16, kernel_size=4)
-        self.bn1 = nn.BatchNorm1d(16)
-        self.elu1 = nn.ELU()
-        self.dropout1 = nn.Dropout(0.1)
-
-        #self.conv2 = nn.Conv1d()
-        #self.bn2 = nn.BatchNorm1d()
-        #self.elu2 = nn.ELU()
-        #self.dropout2 = nn.Dropout()
-
-    def forward(self, x):
-
-        # In: (1, 16, 16) (B, F2, T)
-        x = self.padding1(x)
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.elu1(x)
-        x = self.dropout1(x)
-        print('f', x.shape)
-        quit()
-
 class TemporalConvNet(nn.Module):
-    def __init__(self, input_size, output_size, kernel_size=4, stride=1, dilation=1, depth=2, dropout=0.0):
+    def __init__(self, input_size, output_size, kernel_size=4, stride=1, dilation=1, depth=2, dropout=0.1):
         super(TemporalConvNet, self).__init__()
-
-        layers1 = []
-        in_channels = input_size
-
-        for i in range(depth-1): # 0, 1
-            #dilation_size = dilation ** i
-            #padding = dilation_size * (kernel_size - 1) // 2
-            layers1.append(nn.Conv1d(in_channels, output_size, kernel_size=4, stride=1, padding=0,
-                                 dilation=1))
-
-            layers1.append(nn.BatchNorm1d(output_size))
-            layers1.append(nn.ReLU())
-            layers1.append(nn.Dropout(dropout))
-            in_channels = output_size
-
-        self.network1 = nn.Sequential(*layers1)
-        layers2 = []
-        layers2.append(nn.Conv1d(in_channels, output_size, kernel_size=4, stride=4, padding=0,
-                                 dilation=1))
-        layers2.append(nn.ReLU())
-        layers2.append(nn.Dropout(dropout))
-
-        self.network2 = nn.Sequential(*layers2)
-
-        self.avg_pool = nn.AvgPool1d(4, 4)
-
-        self.last = nn.Conv1d(in_channels, output_size, kernel_size=4, stride=4, padding=0)
-
-        self.avg_pool2 = nn.AvgPool1d(4, 4)
-        
-
-    def forward(self, x):
-        print('x', x.shape) # (1, 16, 19)
-        residual = x[:, :, :-3] # not sure if the right side
-        out1 = self.network1(x)
-        #out2 = self.network2(out1)
-
-        print('residual', residual.shape)   # (1, 16, 16)
-        print('out1', out1.shape)           # (1, 16, 16)
-        #print('out2', out2.shape)           # (1, 16, 13)
-        residual_out = torch.add(residual, out1)
-        print(residual_out.shape)           # (1, 16, 16)
-        out2 = self.network2(residual_out)
-        print(out2.shape)
-
-        residual2 = self.avg_pool(residual_out)
-        print('residual2', residual2.shape)
-
-        residual_out2 = torch.add(out2, residual2)
-        print(residual_out2.shape)  # (1, 16, 4)
-
-        out3 = self.last(residual_out2)
-
-        residual_out3 = self.avg_pool2(residual_out2)
-
-        print('out3', out3.shape)
-        print('rout3', residual_out3.shape)
-
-        final_out = torch.add(out3, residual_out3)
-        quit()
-        return out
-
-
-class TemporalConvNet2(nn.Module):
-    def __init__(self, input_size, output_size, kernel_size=4, stride=1, dilation=1, depth=2, dropout=0.0):
-        super(TemporalConvNet2, self).__init__()
 
         layer_1 = []
         in_channels = input_size
@@ -223,8 +129,6 @@ class TemporalConvNet2(nn.Module):
 
 
 
-
-
 class TransformerBlock(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward, dropout):
         super(TransformerBlock, self).__init__()
@@ -254,7 +158,7 @@ class ContinuousTransformer(nn.Module):
         self.transformer_block1 = TransformerBlock(d_model, nhead, dim_feedforward, dropout)
         self.transformer_block2 = TransformerBlock(d_model, nhead, dim_feedforward, dropout)
         #self.tcn_block = TCN_Block(16, 1)
-        self.temporal_conv_net = TemporalConvNet2(16, 16)
+        self.temporal_conv_net = TemporalConvNet(16, 16)
         #self.temp_conv = nn.Conv1d(in_channels=d_model, out_channels=out_channels, kernel_size=3, padding=1)
         self.fc_out = nn.Linear(32, n_classes)
         self.softmax = nn.Softmax(dim=1)
@@ -281,6 +185,7 @@ class ContinuousTransformer(nn.Module):
             print(sub_section.shape) # (1, 16, 16) (B, T, F2)
 
             attention_block = self.transformer_block1(sub_section)
+            attention_block = self.transformer_block2(attention_block)
             print('d', attention_block.shape)
 
             attention_block = attention_block.permute(0, 2, 1)
