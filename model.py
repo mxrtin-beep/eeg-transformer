@@ -210,11 +210,5 @@ class ContinuousTransformer(nn.Module):
 
 
 
-model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=512, dropout=0.1)
-input_data = torch.randn(1, 1, 22, 1125) 
 
-out = model(input_data)
-
-print('Out: ', out.shape)
-print(out)
 
