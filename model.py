@@ -19,21 +19,21 @@ class ConvBlock(nn.Module):
     def forward(self, x):
                         # Should be (1, 1, 22, 1125)
         x = self.conv(x)
-        print(x.shape)  # Should be (1, 8, 22, 1124)
+        #print(x.shape)  # Should be (1, 8, 22, 1124)
         x = self.bn1(x)
         x = self.depthwise_conv(x)
-        print(x.shape)  # Should be (1, 16, 1, 1124)
+        #print(x.shape)  # Should be (1, 16, 1, 1124)
         x = self.bn2(x)
         x = self.elu(x)
         x = self.avg_pool(x)
         x = self.dropout1(x)
-        print(x.shape)  # Should be (1, 16, 1, 140)
+        #print(x.shape)  # Should be (1, 16, 1, 140)
 
         x = self.conv2(x)
-        print(x.shape)  # Should be (1, 16, 1, 141)
+        #print(x.shape)  # Should be (1, 16, 1, 141)
 
         x = self.avg_pool2(x)
-        print(x.shape)  # Should be (1, 16, 1, 20)
+        #print(x.shape)  # Should be (1, 16, 1, 20)
 
         # Break it up into  (1, 16, 1, 1) x 20
 
@@ -94,35 +94,35 @@ class TemporalConvNet(nn.Module):
         
 
     def forward(self, x):
-        print('x', x.shape) # (1, 16, 19)
+        #print('x', x.shape) # (1, 16, 19)
         residual_1 = self.residual1(x[:, :, :-3]) # not sure if the right side
         out_1 = self.conv1(x)
 
         #out2 = self.network2(out1)
 
-        print('residual_1', residual_1.shape)   # (1, 16, 16)
-        print('out_1', out_1.shape)           # (1, 16, 16)
+        #print('residual_1', residual_1.shape)   # (1, 16, 16)
+        #print('out_1', out_1.shape)           # (1, 16, 16)
 
         combined_1 = torch.add(residual_1, out_1)
 
         out_2 = self.conv2(combined_1)
-        print('out_2: ', out_2.shape)
+        #print('out_2: ', out_2.shape)
 
         residual_2 = self.residual2(combined_1)
-        print('residual_2', residual_2.shape)
+        #print('residual_2', residual_2.shape)
 
         combined_2 = torch.add(out_2, residual_2)
-        print(combined_2.shape)  # (1, 16, 4)
+        #print(combined_2.shape)  # (1, 16, 4)
 
         out_3 = self.conv3(combined_2)
 
         residual_3 = self.residual3(combined_2)
 
-        print('out3', out_3.shape)
-        print('rout3', residual_3.shape)
+        #print('out3', out_3.shape)
+        #print('rout3', residual_3.shape)
         combined_3 = torch.add(out_3, residual_3)
 
-        print('combined_3', combined_3.shape)
+        #print('combined_3', combined_3.shape)
 
         return combined_3
 
@@ -165,9 +165,9 @@ class ContinuousTransformer(nn.Module):
 
     def forward(self, x):
         #x = x.squeeze(1)
-        print('a', x.shape)
+        #print('a', x.shape)
         x = self.conv_block(x)
-        print('b', x.shape) # (1, 16, 1, 20)
+        #print('b', x.shape) # (1, 16, 1, 20)
 
         b, F2, N_Ch, T = x.shape
 
@@ -175,37 +175,37 @@ class ContinuousTransformer(nn.Module):
         for i in range(T):
             seq.append(x[:, :, :, i]) # (1, 16, 1) (B, F2, N_ch)
 
-        print('c', seq[0].shape)
+        #print('c', seq[0].shape)
         # 20 items in seq, each (1, 16, 1) (B, F2, N_ch)
         window_len = 16
         output = []
         for i in range(len(seq) - window_len - 3 + 1):
             sub_section = torch.stack(seq[i:i+window_len+3]).squeeze(-1).permute(1, 0, 2)
             
-            print(sub_section.shape) # (1, 16, 16) (B, T, F2)
+            #print(sub_section.shape) # (1, 16, 16) (B, T, F2)
 
             attention_block = self.transformer_block1(sub_section)
             attention_block = self.transformer_block2(attention_block)
-            print('d', attention_block.shape)
+            #print('d', attention_block.shape)
 
             attention_block = attention_block.permute(0, 2, 1)
-            print('e', attention_block.shape)
+            #print('e', attention_block.shape)
 
             # (1, 16, 16) (B, F2, T)
             x = self.temporal_conv_net(attention_block)
 
             output.append(x)
-            print('f', x.shape)
+            #print('f', x.shape)
 
         # Length is 2
-        print(len(output))
-        print(output[0].shape)
+        #print(len(output))
+        #print(output[0].shape)
 
         all_out = torch.cat(output, 1).squeeze(-1) # (1, 32), (B, N_features)
         
         logits = self.fc_out(all_out) # (1, 4)
         predictions = self.softmax(logits)
-        print(predictions.shape)
+        #print(predictions.shape)
         return predictions
 
 
