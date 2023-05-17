@@ -12,6 +12,7 @@ DICT_2 = {'1023': 'Rejected Trial', '1072': 'Eye Movements', '276': 'Idling EEG 
 '771': 'Cue Onset Foot', '772': 'Cue Onset Tongue'}
 
 # (1, 1, N_ch, T)
+mne.set_log_level(verbose='CRITICAL')
 
 def get_data(subject_id = 1):
 	extension = 'BCICIV_2a_gdf'
@@ -80,8 +81,10 @@ def get_subject_dataset(subject_id = 1):
 		#print(y.shape)
 		#print(arr.shape, n)
 		
-		if arr.shape[3] != T:	# If the array is too short, add time points
+		while arr.shape[3] != T:	# If the array is too short, add time points
 			diff = T - arr.shape[3]
+			#print(diff)
+			#print(arr.shape)
 			arr = torch.cat((arr, arr[:, :, :, -diff:]), 3)
 			#print('new shape: ', arr.shape)
 
@@ -90,7 +93,7 @@ def get_subject_dataset(subject_id = 1):
 			Y = torch.cat((Y, y), 0)
 		n += 1
 
-	return X[1:, :, :, :], Y[1:]
+	return X[1:, :, :, :].to(torch.float32), Y[1:]
 
 
 
@@ -119,10 +122,16 @@ preds = torch.randn((32, 10))
 
 def percent_correct(preds, targets):
 
+	assert(len(preds) == len(targets))
 	count = 0
 	for i in range(len(preds)):
 		pred_idx = torch.argmax(preds[i], dim=0)
-		target_idx = torch.argmax(targets[i], dim=0)
+
+		# If encoded or not
+		if targets.shape[0] == 1:
+			target_idx = targets[i]
+		else:
+			target_idx = torch.argmax(targets[i], dim=0)
 		
 		if pred_idx == target_idx:
 			count += 1
@@ -130,6 +139,16 @@ def percent_correct(preds, targets):
 	return round(count / len(preds) * 100, 4)
 
 
+def print_predictions(preds, targets):
+	correct = 0
+
+	for i in range(len(preds)):
+		pred_idx = torch.argmax(preds[i], dim=0)
+		if pred_idx != targets[i]:
+			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}')
+		else:
+			correct += 1
+			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}\tCorrect!')
 
 
 
