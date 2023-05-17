@@ -36,7 +36,7 @@ def save_losses(epoch):
 	plt.plot(epochs, val_losses)
 	plt.title('Validation Losses, Epoch ' + str(epoch))
 	plt.xlabel('Epoch')
-	plt.savefig('charts/charts_' + str(model_number) + '/losses_' + str(epoch) + '.png')
+	plt.savefig('charts/charts_' + str(model_number) + '/losses_' + str(epoch+1) + '.png')
 	plt.figure()
 	plt.close()
 
@@ -45,7 +45,7 @@ def save_accuracies(epoch):
 	plt.plot(epochs, val_accuracies)
 	plt.title('Validation Percent Correct, Epoch ' + str(epoch))
 	plt.xlabel('Epoch')
-	plt.savefig('charts/charts_' + str(model_number) + '/accuracies_' + str(epoch) + '.png')
+	plt.savefig('charts/charts_' + str(model_number) + '/accuracies_' + str(epoch+1) + '.png')
 	plt.figure()
 	plt.close()
 

@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 import processing as pro
 from model import ContinuousTransformer
@@ -30,26 +31,53 @@ def test(model, model_number, subject):
 		#print(preds)
 		#print(Y)
 		loss = F.cross_entropy(preds, Y)
-		
+
+	pro.print_predictions(preds, Y)
+
 	percent = pro.percent_correct(preds, Y)
 
 	print(f'Test Loss: {loss}')
 	print(f'Percent Correct: {percent}')
 
-	#pro.print_predictions(preds, Y)
-		#print('Preds ', val_preds[:10])
-		#print('Targets ', Y_val[:10])
+
+	
+		
+	return loss, percent
 
 
-MODEL_N = 6
+MODEL_N = 7
 N_SUBJECTS = 9
 
 # 4: has multiple cues per start_session
-SKIP_SUBJECTS = {4}
+SKIP_SUBJECTS = {4, 1}
+
+losses = []
+percents = []
+subjects = []
+
 
 for i in range(1, N_SUBJECTS+1):
 	if i not in SKIP_SUBJECTS:
-		test(model, MODEL_N, i)
+		loss, percent = test(model, MODEL_N, i)
+		losses.append(loss)
+		percents.append(percent)
+		subjects.append(i)
+
+plt.figure()
+plt.bar(subjects, losses)
+plt.title('Test Losses')
+plt.xlabel('Subject')
+plt.savefig('charts/testing/model_' + str(MODEL_N) + '.png')
+plt.figure()
+plt.close()
+
+plt.figure()
+plt.bar(subjects, percents)
+plt.title('Test Percent Correct')
+plt.xlabel('Subject')
+plt.savefig('charts/testing/model_' + str(MODEL_N) + '.png')
+plt.figure()
+plt.close()
 
 #test(model, MODEL_N, 4)
 

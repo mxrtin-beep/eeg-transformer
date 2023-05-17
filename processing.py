@@ -127,8 +127,9 @@ def percent_correct(preds, targets):
 	for i in range(len(preds)):
 		pred_idx = torch.argmax(preds[i], dim=0)
 
+		#print(len(targets.shape))
 		# If encoded or not
-		if targets.shape[0] == 1:
+		if len(targets.shape) == 1:
 			target_idx = targets[i]
 		else:
 			target_idx = torch.argmax(targets[i], dim=0)
@@ -141,7 +142,7 @@ def percent_correct(preds, targets):
 
 def print_predictions(preds, targets):
 	correct = 0
-
+	#print(preds, targets)
 	for i in range(len(preds)):
 		pred_idx = torch.argmax(preds[i], dim=0)
 		if pred_idx != targets[i]:
