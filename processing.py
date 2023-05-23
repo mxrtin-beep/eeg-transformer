@@ -3,8 +3,13 @@ import torch
 import scipy.io
 import mne
 import torch.nn.functional as F
+import scipy.signal as sig
+
 
 fs = 250
+low_freq = 4
+high_freq = 40
+
 
 DICT_1 = {1: '1023', 2: '1072', 3: '276', 4: '277', 5: '32766', 6: '768', 7: '769', 8: '770', 9: '771', 10: '772'}
 DICT_2 = {'1023': 'Rejected Trial', '1072': 'Eye Movements', '276': 'Idling EEG (eyes open)', '277': 'Idling EEG (eyes closed)',
@@ -61,7 +66,7 @@ def get_nth_trial_label(n, events):
 #print(get_nth_trial_data(0, time_points, events, arr).shape)
 #print(get_nth_trial_label(0, events))
 
-def get_subject_dataset(subject_id = 1):
+def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False):
 	data = get_data(subject_id)
 	time_points, events = get_labels(subject_id)
 
@@ -93,13 +98,21 @@ def get_subject_dataset(subject_id = 1):
 			Y = torch.cat((Y, y), 0)
 		n += 1
 
-	return X[1:, :, :, :].to(torch.float32), Y[1:]
+	X_raw = X[1:, :, :, :].to(torch.float32)
+
+	if bandpass_filter:
+		X_raw = bandpass_filter_data(X_raw, low_freq, high_freq, fs)
+
+	if normalize:
+		X_raw = normalize_data(X_raw)
+
+	return X_raw, Y[1:]
 
 
 
-def get_split_data(subject_id = 1):
+def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False):
 
-	X, Y = get_subject_dataset(subject_id)
+	X, Y = get_subject_dataset(subject_id, bandpass_filter=False, normalize=False)
 
 	Y = F.one_hot(Y, num_classes=4)
 
@@ -110,14 +123,19 @@ def get_split_data(subject_id = 1):
 	X_val, Y_val = X[n1:n2, :, :, :], Y[n1:n2]
 	X_te, Y_te = X[n2:, :, :, :], Y[n2:]
 
+	if bandpass_filter:
+		X_tr = bandpass_filter_data(X_tr, low_freq, high_freq, fs)
+		X_val = bandpass_filter_data(X_val, low_freq, high_freq, fs)
+		X_te = bandpass_filter_data(X_te, low_freq, high_freq, fs)
+
+	if normalize:
+		X_tr = normalize_data(X_tr)
+		X_val = normalize_data(X_val)
+		X_te = normalize_data(X_te)
+
 	return X_tr.to(torch.float32), Y_tr.to(torch.float32), X_val.to(torch.float32), Y_val.to(torch.float32), X_te.to(torch.float32), Y_te.to(torch.float32)
 
 
-
-
-X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(1)
-
-preds = torch.randn((32, 10))
 
 
 def percent_correct(preds, targets):
@@ -150,6 +168,38 @@ def print_predictions(preds, targets):
 		else:
 			correct += 1
 			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}\tCorrect!')
+
+
+
+def get_broad_data(subject_list, bandpass_filter=False, normalize=False):
+
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, normalize=normalize)
+	arr = [X_tr, Y_tr, X_val, Y_val, X_te, Y_te]
+	
+
+	for i in range(1, len(subject_list)):
+		X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei = get_split_data(subject_list[i], bandpass_filter=bandpass_filter, normalize=normalize)
+		brr = [X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei]
+
+		for j in range(len(arr)):
+			arr[j] = torch.cat((arr[j], brr[j]), 0)
+
+	print(f'Acquired {arr[0].shape[0]} data points from subjects {subject_list}.')
+	return arr
+
+def bandpass_filter_data(data, low, high, fs, order=5):
+	nyquist = 0.5 * fs
+	b, a = sig.butter(order, [low / nyquist, high / nyquist], btype='band')
+	arr = sig.filtfilt(b, a, data)
+	return torch.from_numpy(arr.copy())
+
+
+def normalize_data(data):
+	mu = torch.mean(data, -1, keepdim=True)
+	sigma = torch.std(data, -1, keepdim=True)
+
+	return (data - mu) / sigma
+
 
 
 
