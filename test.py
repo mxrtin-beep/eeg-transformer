@@ -9,20 +9,20 @@ from model import ContinuousTransformer
 
 model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=512, dropout=0.1)
 
-def load_model(model_number, model):
-	filename = 'models/models_' + str(model_number) + '/model_' + str(model_number) + '.pth'
+def load_model(model_number, model, epoch):
+	filename = 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch)+ '.pth'
 	model.load_state_dict(torch.load(filename))
 	#optimizer.load_state_dict(checkpoint["optimizer"])
 
 	return model
 
-def test(model, model_number, subject):
+def test(model, model_number, epoch, subject, normalize, bandpass_filter):
 
 	print(f'Testing Model {model_number} on Subject {subject}')
-	X, Y = pro.get_subject_dataset(subject)
+	X, Y = pro.get_subject_dataset(subject, normalize=normalize, bandpass_filter=bandpass_filter)
 	
 
-	model = load_model(6, model)
+	model = load_model(model_number, model, epoch)
 
 
 	model.eval()
@@ -45,41 +45,7 @@ def test(model, model_number, subject):
 	return loss, percent
 
 
-MODEL_N = 7
-N_SUBJECTS = 9
-
-# 4: has multiple cues per start_session
-SKIP_SUBJECTS = {4, 1}
-
-losses = []
-percents = []
-subjects = []
-
-
-for i in range(1, N_SUBJECTS+1):
-	if i not in SKIP_SUBJECTS:
-		loss, percent = test(model, MODEL_N, i)
-		losses.append(loss)
-		percents.append(percent)
-		subjects.append(i)
-
-plt.figure()
-plt.bar(subjects, losses)
-plt.title('Test Losses')
-plt.xlabel('Subject')
-plt.savefig('charts/testing/model_' + str(MODEL_N) + '.png')
-plt.figure()
-plt.close()
-
-plt.figure()
-plt.bar(subjects, percents)
-plt.title('Test Percent Correct')
-plt.xlabel('Subject')
-plt.savefig('charts/testing/model_' + str(MODEL_N) + '.png')
-plt.figure()
-plt.close()
-
-#test(model, MODEL_N, 4)
+test(model, model_number=9, epoch=5999, subject=9, normalize=True, bandpass_filter=False)
 
 
 

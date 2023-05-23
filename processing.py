@@ -167,7 +167,7 @@ def print_predictions(preds, targets):
 			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}')
 		else:
 			correct += 1
-			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}\tCorrect!')
+			print(f'Prediction: {pred_idx}\t Target: {targets[i]} \t {correct}/{i}  \tCorrect!')
 
 
 

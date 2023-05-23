@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 import os
 
 import processing as pro
+import documentation as doc
 from model import ContinuousTransformer
+
 
 
 # TO DO
@@ -16,7 +18,8 @@ learning_rate = 0.00001
 validate_fraction = 100
 model_number = 9
 normalize = True
-bandpass_filter = True
+bandpass_filter = False
+document = True
 
 print('Building Transformer Model...')
 model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=512, dropout=0.1)
@@ -27,6 +30,7 @@ print(f'Applying Bandpass Filter: {bandpass_filter}.')
 print(f'Normalizing: {normalize}.')
 X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=s, bandpass_filter=bandpass_filter, normalize=normalize)
 
+print('Input Shape: ', X_tr.shape)
 #X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_split_data(subject_id=1)
 
 #input_data = torch.randn((32, 1, 22, 1125))
@@ -38,6 +42,8 @@ tr_accuracies = []
 val_losses = []
 val_accuracies = []
 epochs = []
+
+if document: doc.create_notes_file(model_number, model, learning_rate, normalize, bandpass_filter, num_epochs, batch_size)
 
 print('Training...')
 
@@ -119,11 +125,12 @@ def train(learning_rate):
 			#if epoch == 2000:
 			#	learning_rate = learning_rate / 10.
 			#optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-			torch.save(model.state_dict(), 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch) + '.pth')
+			torch.save(model.state_dict(), 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch+1) + '.pth')
 
 			
 			save_losses(epoch+1)
 			save_accuracies(epoch+1)
+			if document: doc.update_file(model, epochs[-1], tr_losses[-1], tr_accuracies[-1], val_losses[-1], val_accuracies[-1])
 		
 		ix = torch.randint(0, X_tr.shape[0], (batch_size, ))
 		Xb, Yb = X_tr[ix], Y_tr[ix]
