@@ -13,25 +13,36 @@ from model import ContinuousTransformer
 
 # TO DO
 #	Make model more accepting of different data (more channels, variable time points)	
+# 	Try choosing between only 2 options
+#	Try inputting wavelet transform
 
-learning_rate = 0.00001
+model_number = 10
+learning_rate = 0.00003
 validate_fraction = 100
-model_number = 9
 normalize = True
 bandpass_filter = False
 document = True
 
 print('Building Transformer Model...')
-model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=512, dropout=0.1)
+model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=32, dropout=0.2, n_classes=2)
 
 s = [1, 2, 3, 5, 6, 7, 8]
 print('Assembling Dataset...')
 print(f'Applying Bandpass Filter: {bandpass_filter}.')
 print(f'Normalizing: {normalize}.')
-X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=s, bandpass_filter=bandpass_filter, normalize=normalize)
 
-print('Input Shape: ', X_tr.shape)
+excluded = [2, 3]
+X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=s, bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded)
+
+
+print(f'Excluding Y categories {excluded}...')
+#X_tr, Y_tr = pro.exclude_categories(X_tr, Y_tr, excluded)
+#X_val, Y_val = pro.exclude_categories(X_val, Y_val, excluded)
+#X_te, Y_te = pro.exclude_categories(X_te, Y_te, excluded)
+
+
 #X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_split_data(subject_id=1)
+print('Input Shape: ', X_tr.shape)
 
 #input_data = torch.randn((32, 1, 22, 1125))
 num_epochs = 9000
@@ -43,7 +54,15 @@ val_losses = []
 val_accuracies = []
 epochs = []
 
-if document: doc.create_notes_file(model_number, model, learning_rate, normalize, bandpass_filter, num_epochs, batch_size)
+newpath = 'models/models_' + str(model_number) + '/'
+if not os.path.exists(newpath):
+	os.makedirs(newpath)
+newpath = 'charts/charts_' + str(model_number) + '/'
+if not os.path.exists(newpath):
+	os.makedirs(newpath)
+
+
+if document: doc.create_notes_file(model_number, model, learning_rate, normalize, bandpass_filter, num_epochs, batch_size, excluded)
 
 print('Training...')
 
@@ -95,6 +114,7 @@ def train(learning_rate):
 				Xb, Yb = X_tr[ix], Y_tr[ix]
 
 				train_preds = model(Xb)
+
 				train_loss = F.cross_entropy(train_preds, Yb)
 				train_percent = pro.percent_correct(train_preds, Yb)
 
@@ -116,21 +136,11 @@ def train(learning_rate):
 			model.train()
 		
 		if (epoch + 1) % 1000 == 0:
-			newpath = 'models/models_' + str(model_number) + '/'
-			if not os.path.exists(newpath):
-				os.makedirs(newpath)
-			newpath = 'charts/charts_' + str(model_number) + '/'
-			if not os.path.exists(newpath):
-				os.makedirs(newpath)
-			#if epoch == 2000:
-			#	learning_rate = learning_rate / 10.
-			#optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 			torch.save(model.state_dict(), 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch+1) + '.pth')
 
-			
 			save_losses(epoch+1)
 			save_accuracies(epoch+1)
-			if document: doc.update_file(model, epochs[-1], tr_losses[-1], tr_accuracies[-1], val_losses[-1], val_accuracies[-1])
+			if document: doc.update_file(model_number, epochs[-1], tr_losses[-1], tr_accuracies[-1], val_losses[-1], val_accuracies[-1])
 		
 		ix = torch.randint(0, X_tr.shape[0], (batch_size, ))
 		Xb, Yb = X_tr[ix], Y_tr[ix]

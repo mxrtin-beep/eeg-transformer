@@ -1,9 +1,10 @@
-Model 9:
+Model 10:
 Epochs: 9000
 Batch Size: 32
 Learning Rate: 3e-05
 Normalize: True
 Bandpass Filter: False
+Excluded Y: [2, 3]
 ================================================================================
 Layer (type:depth-idx)                                  Param #
 ================================================================================
@@ -20,19 +21,19 @@ Layer (type:depth-idx)                                  Param #
 ├─TransformerBlock: 1-2                                 --
 |    └─MultiheadAttention: 2-10                         --
 |    |    └─NonDynamicallyQuantizableLinear: 3-1        272
-|    └─Linear: 2-11                                     4,352
+|    └─Linear: 2-11                                     544
 |    └─LayerNorm: 2-12                                  32
 |    └─Dropout: 2-13                                    --
-|    └─Linear: 2-14                                     4,112
+|    └─Linear: 2-14                                     528
 |    └─LayerNorm: 2-15                                  32
 |    └─Dropout: 2-16                                    --
 ├─TransformerBlock: 1-3                                 --
 |    └─MultiheadAttention: 2-17                         --
 |    |    └─NonDynamicallyQuantizableLinear: 3-2        272
-|    └─Linear: 2-18                                     4,352
+|    └─Linear: 2-18                                     544
 |    └─LayerNorm: 2-19                                  32
 |    └─Dropout: 2-20                                    --
-|    └─Linear: 2-21                                     4,112
+|    └─Linear: 2-21                                     528
 |    └─LayerNorm: 2-22                                  32
 |    └─Dropout: 2-23                                    --
 ├─TemporalConvNet: 1-4                                  --
@@ -58,27 +59,11 @@ Layer (type:depth-idx)                                  Param #
 |    └─Sequential: 2-29                                 --
 |    |    └─AvgPool1d: 3-17                             --
 |    |    └─ELU: 3-18                                   --
-├─Linear: 1-5                                           132
+├─Linear: 1-5                                           66
 ├─Softmax: 1-6                                          --
 ================================================================================
-Total params: 26,388
-Trainable params: 26,388
+Total params: 11,538
+Trainable params: 11,538
 Non-trainable params: 0
-================================================================================Epoch: 990	 Training Loss: 1.203522801399231	 Training Accuracy: 52.0833
-Epoch: 990	 Validation Loss: 1.2308518886566162	 Validation Accuracy: 48.3516
-Epoch: 1980	 Training Loss: 1.0939792394638062	 Training Accuracy: 65.625
-Epoch: 1980	 Validation Loss: 1.2186317443847656	 Validation Accuracy: 51.6484
-Epoch: 2970	 Training Loss: 1.0876809358596802	 Training Accuracy: 64.5833
-Epoch: 2970	 Validation Loss: 1.1882288455963135	 Validation Accuracy: 56.044
-Epoch: 3960	 Training Loss: 1.030190110206604	 Training Accuracy: 70.8333
-Epoch: 3960	 Validation Loss: 1.1632827520370483	 Validation Accuracy: 57.1429
-Epoch: 4950	 Training Loss: 1.03760826587677	 Training Accuracy: 68.75
-Epoch: 4950	 Validation Loss: 1.1243728399276733	 Validation Accuracy: 61.5385
-Epoch: 5940	 Training Loss: 0.9440529942512512	 Training Accuracy: 80.2083
-Epoch: 5940	 Validation Loss: 1.1388307809829712	 Validation Accuracy: 59.3407
-Epoch: 6930	 Training Loss: 0.9680882096290588	 Training Accuracy: 77.0833
-Epoch: 6930	 Validation Loss: 1.132388949394226	 Validation Accuracy: 59.8901
-Epoch: 7920	 Training Loss: 0.9569814801216125	 Training Accuracy: 78.125
-Epoch: 7920	 Validation Loss: 1.1575706005096436	 Validation Accuracy: 58.2418
-Epoch: 9000	 Training Loss: 0.9624361991882324	 Training Accuracy: 78.125
-Epoch: 9000	 Validation Loss: 1.1568446159362793	 Validation Accuracy: 56.5934
+================================================================================
+
