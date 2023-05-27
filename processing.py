@@ -4,13 +4,15 @@ import scipy.io
 import mne
 import torch.nn.functional as F
 import scipy.signal as sig
+from matplotlib.pyplot import specgram
+
 
 
 fs = 250
 low_freq = 4
 high_freq = 40
 
-T = 1155	# Number of time points that fit in the model
+T = 1125	# Number of time points that fit in the model
 N_ch = 25	# Number of channels that fit in the model
 
 '''
@@ -81,7 +83,9 @@ def get_nth_trial_label(n, events):
 
 # --------------------------------------------------- DATASET METHODS -------------------------------------------------------------------------
 
-def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[]):
+n_augment = 50
+
+def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[], augment=False):
 	data = get_data(subject_id)
 	time_points, events = get_labels(subject_id)
 
@@ -93,13 +97,19 @@ def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, 
 	
 	n = 0
 	while (n+1) < n_trials:
-		arr = get_nth_trial_data(n, time_points, events, data)[:, :, :N_ch, :T]		# Only take the first 22 channels and 1125 time points
+		arr = get_nth_trial_data(n, time_points, events, data)
+
+		if not augment:
+			arr = arr[:, :, :N_ch, :T]		# Only take the first 22 channels and 1125 time points
+		else:
+			arr = arr[:, :, :N_ch, :]
+
 		y_arr = np.array([int(get_nth_trial_label(n, events)) - 769])
 		y = torch.tensor(y_arr)
 		#print(y.shape)
 		#print(arr.shape, n)
 		
-		while arr.shape[3] != T:	# If the array is too short, add time points
+		while arr.shape[3] < T:	# If the array is too short, add time points
 			diff = T - arr.shape[3]
 			#print(diff)
 			#print(arr.shape)
@@ -107,8 +117,20 @@ def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, 
 			#print('new shape: ', arr.shape)
 
 		if y_arr[0] != 254:			# 1023: rejected trial, don't add.
-			X = torch.cat((X, arr), 0)
-			Y = torch.cat((Y, y), 0)
+			if not augment:
+				X = torch.cat((X, arr), 0)
+				Y = torch.cat((Y, y), 0)
+			else:
+				arr_length = arr.shape[3]
+				diff = arr_length - T
+				#print(f'To trial {n} adding {int(diff/n_augment)} points.')
+				for i in range(0, diff, n_augment):
+					aug_arr = arr[:, :, :, i:i+T]
+					X = torch.cat((X, aug_arr), 0)
+					Y = torch.cat((Y, y), 0)
+
+
+
 		n += 1
 
 	X = X[1:, :, :, :].to(torch.float32)
@@ -122,14 +144,15 @@ def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, 
 
 
 	X, Y = exclude_categories(X, Y, excluded)
+	print(f'Subject {subject_id}: {X.shape}.')
 
 	return X, Y
 
 
 
-def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[]):
+def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[], augment=False):
 
-	X, Y = get_subject_dataset(subject_id, bandpass_filter=False, normalize=False, excluded=excluded)
+	X, Y = get_subject_dataset(subject_id, bandpass_filter=False, normalize=False, excluded=excluded, augment=augment)
 
 	Y = F.one_hot(Y, num_classes=(4 - len(excluded)))
 
@@ -154,14 +177,14 @@ def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, exclu
 
 
 
-def get_broad_data(subject_list, bandpass_filter=False, normalize=False, excluded=[]):
+def get_broad_data(subject_list, bandpass_filter=False, normalize=False, excluded=[], augment=False):
 
-	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded)
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded, augment=augment)
 	arr = [X_tr, Y_tr, X_val, Y_val, X_te, Y_te]
 	
 
 	for i in range(1, len(subject_list)):
-		X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei = get_split_data(subject_list[i], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded)
+		X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei = get_split_data(subject_list[i], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded, augment=augment)
 		brr = [X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei]
 
 		for j in range(len(arr)):
@@ -240,5 +263,11 @@ def exclude_categories(X, Y, excluded):
 		x, y = x[y != i], y[y != i]
 
 	return x, y
+
+
+# --------------------------------------------------- SPECTROGRAM -------------------------------------------------------------------------
+
+
+
 
 

@@ -1,5 +1,5 @@
 Model 10:
-Epochs: 9000
+Epochs: 10000
 Batch Size: 32
 Learning Rate: 3e-05
 Normalize: True
@@ -21,19 +21,19 @@ Layer (type:depth-idx)                                  Param #
 ├─TransformerBlock: 1-2                                 --
 |    └─MultiheadAttention: 2-10                         --
 |    |    └─NonDynamicallyQuantizableLinear: 3-1        272
-|    └─Linear: 2-11                                     544
+|    └─Linear: 2-11                                     1,088
 |    └─LayerNorm: 2-12                                  32
 |    └─Dropout: 2-13                                    --
-|    └─Linear: 2-14                                     528
+|    └─Linear: 2-14                                     1,040
 |    └─LayerNorm: 2-15                                  32
 |    └─Dropout: 2-16                                    --
 ├─TransformerBlock: 1-3                                 --
 |    └─MultiheadAttention: 2-17                         --
 |    |    └─NonDynamicallyQuantizableLinear: 3-2        272
-|    └─Linear: 2-18                                     544
+|    └─Linear: 2-18                                     1,088
 |    └─LayerNorm: 2-19                                  32
 |    └─Dropout: 2-20                                    --
-|    └─Linear: 2-21                                     528
+|    └─Linear: 2-21                                     1,040
 |    └─LayerNorm: 2-22                                  32
 |    └─Dropout: 2-23                                    --
 ├─TemporalConvNet: 1-4                                  --
@@ -62,8 +62,28 @@ Layer (type:depth-idx)                                  Param #
 ├─Linear: 1-5                                           66
 ├─Softmax: 1-6                                          --
 ================================================================================
-Total params: 11,538
-Trainable params: 11,538
+Total params: 13,650
+Trainable params: 13,650
 Non-trainable params: 0
 ================================================================================
 
+Epoch: 1000	 Training Loss:	 0.5709840059280396	 Training Accuracy:	 70.8333
+Epoch: 1000	 Valid. Loss:	 0.5701348185539246	 Validation Accuracy:	 71.7391
+Epoch: 2000	 Training Loss:	 0.3992536962032318	 Training Accuracy:	 91.6667
+Epoch: 2000	 Valid. Loss:	 0.5458487868309021	 Validation Accuracy:	 76.087
+Epoch: 3000	 Training Loss:	 0.3340415060520172	 Training Accuracy:	 97.9167
+Epoch: 3000	 Valid. Loss:	 0.481902152299881	 Validation Accuracy:	 82.6087
+Epoch: 4000	 Training Loss:	 0.34919822216033936	 Training Accuracy:	 95.8333
+Epoch: 4000	 Valid. Loss:	 0.4650447964668274	 Validation Accuracy:	 84.7826
+Epoch: 5000	 Training Loss:	 0.3445872366428375	 Training Accuracy:	 96.875
+Epoch: 5000	 Valid. Loss:	 0.4666782021522522	 Validation Accuracy:	 83.6957
+Epoch: 6000	 Training Loss:	 0.33406862616539	 Training Accuracy:	 97.9167
+Epoch: 6000	 Valid. Loss:	 0.47408074140548706	 Validation Accuracy:	 83.6957
+Epoch: 7000	 Training Loss:	 0.3133065402507782	 Training Accuracy:	 100.0
+Epoch: 7000	 Valid. Loss:	 0.45491310954093933	 Validation Accuracy:	 85.8696
+Epoch: 8000	 Training Loss:	 0.31326165795326233	 Training Accuracy:	 100.0
+Epoch: 8000	 Valid. Loss:	 0.44912803173065186	 Validation Accuracy:	 85.8696
+Epoch: 9000	 Training Loss:	 0.32386648654937744	 Training Accuracy:	 98.9583
+Epoch: 9000	 Valid. Loss:	 0.4044888913631439	 Validation Accuracy:	 91.3043
+Epoch: 10000	 Training Loss:	 0.32367831468582153	 Training Accuracy:	 98.9583
+Epoch: 10000	 Valid. Loss:	 0.4436947703361511	 Validation Accuracy:	 86.9565

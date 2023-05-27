@@ -9,8 +9,8 @@ import processing as pro
 from model import ContinuousTransformer
 
 
-
-model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=4, dim_feedforward=256, dropout=0.1)
+n_classes = 4
+model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=16, dim_feedforward=32, dropout=0.2, n_classes=n_classes)
 
 def load_model(model_number, model, epoch):
 	filename = 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch)+ '.pth'
@@ -29,11 +29,11 @@ def decode_y(Y):
 	return y_preds
 
 
+#excluded = []
+def test(model, model_number, epoch, subject, normalize, bandpass_filter, excluded_y):
 
-def test(model, model_number, epoch, subject, normalize, bandpass_filter):
-
-	print(f'Testing Model {model_number} on Subject {subject}')
-	X, Y = pro.get_subject_dataset(subject, normalize=normalize, bandpass_filter=bandpass_filter)
+	print(f'Testing Model {model_number}, Epoch {epoch} on Subject {subject}')
+	X, Y = pro.get_subject_dataset(subject, normalize=normalize, bandpass_filter=bandpass_filter, excluded=excluded_y)
 	
 
 	model = load_model(model_number, model, epoch)
@@ -46,7 +46,7 @@ def test(model, model_number, epoch, subject, normalize, bandpass_filter):
 		#print(Y)
 		loss = F.cross_entropy(preds, Y)
 
-	pro.print_predictions(preds, Y)
+	#pro.print_predictions(preds, Y)
 
 	percent = pro.percent_correct(preds, Y)
 
@@ -67,12 +67,27 @@ def test(model, model_number, epoch, subject, normalize, bandpass_filter):
 	plt.title('Confusion Matrix')
 	plt.ylabel('Targets')
 	plt.xlabel('Predictions')
-	plt.savefig('charts/' + str(model_number) + '_confusionmatrix.png')	
+	plt.savefig('charts/charts_' + str(model_number) + '/' + str(model_number) + '_' + str(epoch) + '_confusionmatrix.png')	
 	return loss, percent
 
 
-test(model, model_number=9, epoch=8000, subject=9, normalize=True, bandpass_filter=False)
+def get_max_accuracy(model, model_number, subject):
 
+	min_loss = 1000
+	max_percent = 0
+
+	for i in range(1000, 11000, 1000):
+		loss, percent = test(model, model_number=model_number, epoch=i, subject=subject, normalize=True, bandpass_filter=False, excluded_y=[])
+		if loss < min_loss:
+			min_loss = loss
+		if percent > max_percent:
+			max_percent = percent
+
+	return min_loss, max_percent
+
+
+for i in range(1000, 7000+1000, 1000):
+	test(model, model_number=3, epoch=i, subject=9, normalize=True, bandpass_filter=False, excluded_y=[])
 
 
 

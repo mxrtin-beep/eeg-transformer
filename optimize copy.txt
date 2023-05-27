@@ -1,0 +1,19 @@
+Start
+Parameters: (8, 8, 32, 0.1, 'adam')	 Min Loss: 1.1935588121414185	 Max Accuracy: 54.2373.
+Parameters: (8, 8, 32, 0.2, 'adam')	 Min Loss: 1.1695233583450317	 Max Accuracy: 56.3559.
+Parameters: (8, 8, 32, 0.3, 'adam')	 Min Loss: 1.2367411851882935	 Max Accuracy: 49.1525.
+Parameters: (8, 8, 64, 0.1, 'adam')	 Min Loss: 1.2424520254135132	 Max Accuracy: 48.7288.
+Parameters: (8, 8, 64, 0.2, 'adam')	 Min Loss: 1.2363580465316772	 Max Accuracy: 50.4237.
+Parameters: (8, 8, 64, 0.3, 'adam')	 Min Loss: 1.247727394104004	 Max Accuracy: 49.5763.
+Parameters: (8, 8, 128, 0.1, 'adam')	 Min Loss: 1.2054656744003296	 Max Accuracy: 54.661.
+Parameters: (8, 8, 128, 0.2, 'adam')	 Min Loss: 1.109950304031372	 Max Accuracy: 62.2881.
+Parameters: (8, 8, 128, 0.3, 'adam')	 Min Loss: 1.2070949077606201	 Max Accuracy: 52.9661.
+Parameters: (8, 16, 32, 0.1, 'adam')	 Min Loss: 1.152474284172058	 Max Accuracy: 57.6271.
+Parameters: (8, 16, 32, 0.2, 'adam')	 Min Loss: 1.2350538969039917	 Max Accuracy: 49.5763.
+Parameters: (8, 16, 32, 0.3, 'adam')	 Min Loss: 1.2892839908599854	 Max Accuracy: 44.9153.
+Parameters: (8, 16, 64, 0.1, 'adam')	 Min Loss: 1.2083485126495361	 Max Accuracy: 52.1186.
+Parameters: (8, 16, 64, 0.2, 'adam')	 Min Loss: 1.0579607486724854	 Max Accuracy: 69.4915.
+Parameters: (8, 16, 64, 0.3, 'adam')	 Min Loss: 1.2084174156188965	 Max Accuracy: 53.3898.
+Parameters: (8, 16, 128, 0.1, 'adam')	 Min Loss: 1.1845225095748901	 Max Accuracy: 54.661.
+Parameters: (8, 16, 128, 0.2, 'adam')	 Min Loss: 1.22744882106781	 Max Accuracy: 50.4237.
+Parameters: (8, 16, 128, 0.3, 'adam')	 Min Loss: 1.1936733722686768	 Max Accuracy: 54.661.
