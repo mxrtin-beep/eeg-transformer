@@ -1,6 +1,6 @@
 Model 3:
 Epochs: 10000
-Batch Size: 64
+Batch Size: 32
 Learning Rate: 2e-05
 Normalize: True
 Bandpass Filter: False

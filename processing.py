@@ -77,7 +77,9 @@ def get_nth_trial_label(n, events):
 
 
 
-
+def shuffle(X, Y):
+	indices = torch.randperm(X.size()[0])
+	return X[indices], Y[indices]
 
 
 
@@ -155,6 +157,8 @@ def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, exclu
 	X, Y = get_subject_dataset(subject_id, bandpass_filter=False, normalize=False, excluded=excluded, augment=augment)
 
 	Y = F.one_hot(Y, num_classes=(4 - len(excluded)))
+
+	X, Y = shuffle(X, Y)
 
 	n1 = int(0.8*X.shape[0])
 	n2 = int(0.9*X.shape[0])

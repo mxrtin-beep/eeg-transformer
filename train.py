@@ -31,7 +31,7 @@ document = True
 print_training_data = False
 
 num_epochs = 10000
-batch_size = 64
+batch_size = 32
 
 optimizer_name = 'adam'
 
@@ -63,7 +63,9 @@ def get_data(s, bandpass_filter, normalize, excluded_y, augment):
 	#X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_split_data(subject_id=1)
 	print('Input Shape: ', X_tr.shape)
 
-	#input_data = torch.randn((32, 1, 22, 1125))
+	X_tr, Y_tr = pro.shuffle(X_tr, Y_tr)
+	X_val, Y_val = pro.shuffle(X_val, Y_val)
+	X_te, Y_te = pro.shuffle(X_te, Y_te)
 
 	return X_tr, Y_tr, X_val, Y_val, X_te, Y_te
 
@@ -115,15 +117,33 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 	print('Creating Notes File...')
 	if document: doc.create_notes_file(model_number, model, learning_rate, normalize, bandpass_filter, num_epochs, batch_size, excluded_y)
 
-	print('Creating Dataset...')
-	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_data(subjects, bandpass_filter, normalize, excluded_y, augment)
+	save = True
+
+	if save:
+		print('Creating Dataset...')
+		X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_data(subjects, bandpass_filter, normalize, excluded_y, augment)
+
+		torch.save(X_tr, 'X_tr.pt')
+		torch.save(Y_tr, 'Y_tr.pt')
+		torch.save(X_val, 'X_val.pt')
+		torch.save(Y_val, 'Y_val.pt')
+
+	else:
+		X_tr = torch.load('X_tr.pt')
+		Y_tr = torch.load('Y_tr.pt')
+		X_val = torch.load('X_val.pt')
+		Y_val = torch.load('Y_val.pt')
+
+		X_val = X_val[:int(len(X_val) / 10)]
+		Y_val = Y_val[:int(len(Y_val) / 10)]
+		assert(len(X_val) == len(Y_val))
 
 	if optimizer_name == 'adam':
 		optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 	if optimizer_name == 'asgd':
 		optimizer = optim.ASGD(model.parameters(), lr=learning_rate)
 	
-
+	
 	# X_tr (218, 1, 22, 1125)
 	# Y_tr (218, 4)
 
@@ -137,10 +157,9 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 			model.eval()
 			with torch.no_grad():
 
-				ix = torch.randint(0, X_tr.shape[0], (batch_size*3, ))
-				Xb, Yb = X_tr[ix], Y_tr[ix]
-
 				if print_training_data:
+					ix = torch.randint(0, X_tr.shape[0], (batch_size*3, ))
+					Xb, Yb = X_tr[ix], Y_tr[ix]
 					train_preds = model(Xb)
 
 					train_loss = F.cross_entropy(train_preds, Yb)
@@ -151,6 +170,7 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 
 					tr_losses.append(train_loss)
 					tr_accuracies.append(train_percent)
+
 
 				val_preds = model(X_val)
 				val_loss = F.cross_entropy(val_preds, Y_val)
