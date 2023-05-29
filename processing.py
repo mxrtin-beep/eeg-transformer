@@ -88,6 +88,94 @@ def shuffle(X, Y):
 
 n_augment = 50
 
+def get_training_data(subject_list, bandpass_filter, normalize, excluded_y, augment, load_data):
+	
+	print(f'Applying Bandpass Filter: {bandpass_filter}.')
+	print(f'Normalizing: {normalize}.')
+	print(f'Augmenting: {augment}.')
+
+	suffix = ''
+	if normalize:
+		suffix += '_norm'
+	if augment:
+		suffix += '_aug'
+
+	if load_data:
+		X_tr = torch.load('data/X_tr' + suffix + '.pt')
+		Y_tr = torch.load('data/Y_tr' + suffix + '.pt')
+		X_val = torch.load('data/X_val' + suffix + '.pt')
+		Y_val = torch.load('data/Y_val' + suffix + '.pt')
+		X_te = torch.load('data/X_te' + suffix + '.pt')
+		Y_te = torch.load('data/Y_te' + suffix + '.pt')
+		print('Loading Data: ', 'data/X_tr' + suffix + '.pt')
+
+	# Saving data...
+	else:
+
+		X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_subject_wide_data(subject_list=subject_list, bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
+
+		print(f'Excluding Y categories {excluded_y}...')
+		X_tr, Y_tr = exclude_categories(X_tr, Y_tr, excluded_y)
+		X_val, Y_val = exclude_categories(X_val, Y_val, excluded_y)
+		X_te, Y_te = exclude_categories(X_te, Y_te, excluded_y)
+
+
+		print('Input Shape: ', X_tr.shape)
+
+		#X_tr, Y_tr = pro.shuffle(X_tr, Y_tr)
+		#X_val, Y_val = pro.shuffle(X_val, Y_val)
+		#X_te, Y_te = pro.shuffle(X_te, Y_te)
+
+		if normalize:
+			X_tr, X_val, X_te = normalize_data(X_tr, X_val, X_te)
+
+
+		torch.save(X_tr, 'data/X_tr' + suffix + '.pt')
+		torch.save(Y_tr, 'data/Y_tr' + suffix + '.pt')
+		torch.save(X_val, 'data/X_val' + suffix + '.pt')
+		torch.save(Y_val, 'data/Y_val' + suffix + '.pt')
+		torch.save(X_te, 'data/X_te' + suffix + '.pt')
+		torch.save(Y_te, 'data/Y_te' + suffix + '.pt')
+		print('Saving Data ' + 'data/X_tr' + suffix + '.pt')
+
+	return X_tr, Y_tr, X_val, Y_val, X_te, Y_te
+
+def get_testing_data(subject, bandpass_filter, normalize, excluded_y, augment, load_data):
+
+	print(f'Applying Bandpass Filter: {bandpass_filter}.')
+	print(f'Normalizing: {normalize}.')
+	print(f'Augmenting: {augment}.')
+
+	suffix = ''
+	if normalize:
+		suffix += '_norm'
+	if augment:
+		suffix += '_aug'
+
+	if load_data:
+		X = torch.load('data/X_9' + suffix + '.pt')
+		Y = torch.load('data/Y_9' + suffix + '.pt')
+		print('Loading Data: ', 'data/X_9' + suffix + '.pt')
+		print('Shape ', X.shape)
+
+	else:
+		X, Y, _, _, _, _ = get_subject_wide_data(subject_list=[subject], bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
+
+		X, Y = exclude_categories(X, Y, excluded_y)
+
+		if normalize:
+			X = normalize_test_data(X)
+
+
+		torch.save(X, 'data/X_9' + suffix + '.pt')
+		torch.save(Y, 'data/Y_9' + suffix + '.pt')
+		print('Saving Data: ', 'data/X_9' + suffix + '.pt')
+		print('Shape: ', X.shape)
+
+
+	return X, Y
+
+
 def get_subject_dataset(subject_id = 1, bandpass_filter=False, excluded=[], augment=False):
 	data = get_data(subject_id)
 	time_points, events = get_labels(subject_id)
@@ -171,7 +259,7 @@ def get_split_data(subject_id = 1, bandpass_filter=False, excluded=[], augment=F
 
 
 
-def get_broad_data(subject_list, bandpass_filter=False, excluded=[], augment=False):
+def get_subject_wide_data(subject_list, bandpass_filter=False, excluded=[], augment=False):
 
 	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, excluded=excluded, augment=augment)
 	arr = [X_tr, Y_tr, X_val, Y_val, X_te, Y_te]
@@ -243,7 +331,7 @@ def bandpass_filter_data(data, low, high, fs, order=5):
 	return torch.from_numpy(arr.copy())
 
 
-def normalize_data(X_tr, X_val, X_te, other):
+def normalize_data(X_tr, X_val, X_te):
 
 	N_ch = X_tr.shape[2]
 
@@ -252,11 +340,27 @@ def normalize_data(X_tr, X_val, X_te, other):
 		mu = torch.mean(X_tr[:, 0, j, :])
 		sigma = torch.std(X_tr[:, 0, j, :])
 
+		torch.save(mu, 'data/mu_' + str(j) + '.pt')
+		torch.save(sigma, 'data/sigma_' + str(j) + '.pt')
+
 		X_tr[:, 0, j, :] = (X_tr[:, 0, j, :] - mu) / sigma
 		X_val[:, 0, j, :] = (X_val[:, 0, j, :] - mu) / sigma
 		X_te[:, 0, j, :] = (X_te[:, 0, j, :] - mu) / sigma
 
 	return X_tr, X_val, X_te
+
+def normalize_test_data(X):
+
+	N_ch = X.shape[2] # 25
+
+	for j in range(N_ch): # 0 to 24
+
+		mu_j = torch.load('data/mu_' + str(j) + '.pt')
+		sigma_j = torch.load('data/sigma_' + str(j) + '.pt')
+
+		X[:, 0, j, :] = (X[:, 0, j, :] - mu_j) / sigma_j
+
+	return X
 
 
 def exclude_categories(X, Y, excluded):

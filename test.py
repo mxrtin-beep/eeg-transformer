@@ -9,6 +9,23 @@ import processing as pro
 from model import ContinuousTransformer
 
 
+
+
+# DATA PARAMETERS
+normalize = True
+bandpass_filter = False
+augment = False
+load_data = False # False: save data
+subjects = [1, 2, 3, 5, 6, 7, 8]
+excluded_y = []
+
+
+# TEST PARAMETERS
+model_number = 5
+epoch = 4000
+subject = 9
+
+
 n_classes = 4
 model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=8, dim_feedforward=32, dropout=0.2, n_classes=n_classes)
 
@@ -29,37 +46,11 @@ def decode_y(Y):
 	return y_preds
 
 
-#excluded = []
 def test(model, model_number, epoch, subject, normalize, bandpass_filter, excluded_y, augment):
 
 	print(f'Testing Model {model_number}, Epoch {epoch} on Subject {subject}')
-	'''
 
-	subjects = [1, 2, 3, 5, 6, 7, 8]
-	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=subjects, bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
-	
-
-	N_ch = X_tr.shape[2]
-
-	for j in range(N_ch):
-		
-		mu = torch.mean(X_tr[:, 0, j, :])
-		sigma = torch.std(X_tr[:, 0, j, :])
-
-		X_9[:, 0, j, :] = (X_9[:, 0, j, :] - mu) / sigma
-		
-	torch.save(X_9, 'X_9_norm.pt')
-	torch.save(Y_9, 'Y_9_norm.pt')
-
-	'''
-	X_9 = torch.load('X_9_norm.pt')
-	Y_9 = torch.load('Y_9_norm.pt')
-	#ix = torch.randint(0, X.shape[0], (300, ))
-
-	#X_9, Y_9, _, _, _, _ = pro.get_broad_data(subject_list=[9], bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
-
-	X = X_9
-	Y = Y_9
+	X, Y = pro.get_testing_data(subject=subject, bandpass_filter=bandpass_filter, normalize=normalize, excluded_y=excluded_y, augment=augment,load_data=load_data)
 
 	model = load_model(model_number, model, epoch)
 
@@ -114,10 +105,7 @@ def get_max_accuracy(model, model_number, subject):
 	return min_loss, max_percent
 
 
-#for i in range(1000, 20000+1000, 1000):
-#	test(model, model_number=3, epoch=i, subject=9, normalize=True, bandpass_filter=False, excluded_y=[])
-
-test(model, model_number=5, epoch=4000, subject=9, normalize=True, bandpass_filter=False, excluded_y=[], augment=False)
+test(model, model_number=model_number, epoch=epoch, subject=subject, normalize=normalize, bandpass_filter=bandpass_filter, excluded_y=[], augment=augment)
 
 
 
