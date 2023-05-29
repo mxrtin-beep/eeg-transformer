@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, precision_score, recall_score
 from sklearn import metrics
 import numpy as np
 
@@ -10,7 +10,7 @@ from model import ContinuousTransformer
 
 
 n_classes = 4
-model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=16, dim_feedforward=32, dropout=0.2, n_classes=n_classes)
+model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=8, dim_feedforward=32, dropout=0.2, n_classes=n_classes)
 
 def load_model(model_number, model, epoch):
 	filename = 'models/models_' + str(model_number) + '/model_' + str(model_number) + '_epoch_' + str(epoch)+ '.pth'
@@ -30,14 +30,38 @@ def decode_y(Y):
 
 
 #excluded = []
-def test(model, model_number, epoch, subject, normalize, bandpass_filter, excluded_y):
+def test(model, model_number, epoch, subject, normalize, bandpass_filter, excluded_y, augment):
 
 	print(f'Testing Model {model_number}, Epoch {epoch} on Subject {subject}')
-	X, Y = pro.get_subject_dataset(subject, normalize=normalize, bandpass_filter=bandpass_filter, excluded=excluded_y)
+	'''
+
+	subjects = [1, 2, 3, 5, 6, 7, 8]
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=subjects, bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
 	
 
-	model = load_model(model_number, model, epoch)
+	N_ch = X_tr.shape[2]
 
+	for j in range(N_ch):
+		
+		mu = torch.mean(X_tr[:, 0, j, :])
+		sigma = torch.std(X_tr[:, 0, j, :])
+
+		X_9[:, 0, j, :] = (X_9[:, 0, j, :] - mu) / sigma
+		
+	torch.save(X_9, 'X_9_norm.pt')
+	torch.save(Y_9, 'Y_9_norm.pt')
+
+	'''
+	X_9 = torch.load('X_9_norm.pt')
+	Y_9 = torch.load('Y_9_norm.pt')
+	#ix = torch.randint(0, X.shape[0], (300, ))
+
+	#X_9, Y_9, _, _, _, _ = pro.get_broad_data(subject_list=[9], bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
+
+	X = X_9
+	Y = Y_9
+
+	model = load_model(model_number, model, epoch)
 
 	model.eval()
 	with torch.no_grad():
@@ -52,15 +76,18 @@ def test(model, model_number, epoch, subject, normalize, bandpass_filter, exclud
 
 	print(f'Test Loss: {loss}')
 	print(f'Percent Correct: {percent}')
+	
+	if len(Y.shape) > 1:
+		preds = decode_y(preds)
+		Y = decode_y(Y)
 
-
-	decoded_preds = decode_y(preds)
-
-	#print(Y[:10])
-	#print(preds[:10])
+	precision = precision_score(Y, preds, average='macro')
+	recall = recall_score(Y, preds, average='macro')
+	print(f'Precision: {round(precision, 2)}')
+	print(f'Recall: {round(recall, 2)}')
 
 	fig, ax = plt.subplots()
-	cm = confusion_matrix(Y, decoded_preds)
+	cm = confusion_matrix(Y, preds)
 	cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = cm)
 	cm_display.plot()
 	
@@ -68,6 +95,7 @@ def test(model, model_number, epoch, subject, normalize, bandpass_filter, exclud
 	plt.ylabel('Targets')
 	plt.xlabel('Predictions')
 	plt.savefig('charts/charts_' + str(model_number) + '/' + str(model_number) + '_' + str(epoch) + '_confusionmatrix.png')	
+	plt.close()
 	return loss, percent
 
 
@@ -86,9 +114,10 @@ def get_max_accuracy(model, model_number, subject):
 	return min_loss, max_percent
 
 
-for i in range(1000, 7000+1000, 1000):
-	test(model, model_number=3, epoch=i, subject=9, normalize=True, bandpass_filter=False, excluded_y=[])
+#for i in range(1000, 20000+1000, 1000):
+#	test(model, model_number=3, epoch=i, subject=9, normalize=True, bandpass_filter=False, excluded_y=[])
 
+test(model, model_number=5, epoch=4000, subject=9, normalize=True, bandpass_filter=False, excluded_y=[], augment=False)
 
 
 

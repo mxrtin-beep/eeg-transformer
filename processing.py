@@ -5,6 +5,7 @@ import mne
 import torch.nn.functional as F
 import scipy.signal as sig
 from matplotlib.pyplot import specgram
+import matplotlib.pyplot as plt
 
 
 
@@ -87,7 +88,7 @@ def shuffle(X, Y):
 
 n_augment = 50
 
-def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[], augment=False):
+def get_subject_dataset(subject_id = 1, bandpass_filter=False, excluded=[], augment=False):
 	data = get_data(subject_id)
 	time_points, events = get_labels(subject_id)
 
@@ -138,13 +139,6 @@ def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, 
 	X = X[1:, :, :, :].to(torch.float32)
 	Y = Y[1:]
 
-	if bandpass_filter:
-		X = bandpass_filter_data(X, low_freq, high_freq, fs)
-
-	if normalize:
-		X = normalize_data(X)
-
-
 	X, Y = exclude_categories(X, Y, excluded)
 	print(f'Subject {subject_id}: {X.shape}.')
 
@@ -152,13 +146,13 @@ def get_subject_dataset(subject_id = 1, bandpass_filter=False, normalize=False, 
 
 
 
-def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, excluded=[], augment=False):
+def get_split_data(subject_id = 1, bandpass_filter=False, excluded=[], augment=False):
 
-	X, Y = get_subject_dataset(subject_id, bandpass_filter=False, normalize=False, excluded=excluded, augment=augment)
+	X, Y = get_subject_dataset(subject_id, excluded=excluded, augment=augment)
 
 	Y = F.one_hot(Y, num_classes=(4 - len(excluded)))
 
-	X, Y = shuffle(X, Y)
+	#X, Y = shuffle(X, Y)
 
 	n1 = int(0.8*X.shape[0])
 	n2 = int(0.9*X.shape[0])
@@ -172,28 +166,24 @@ def get_split_data(subject_id = 1, bandpass_filter=False, normalize=False, exclu
 		X_val = bandpass_filter_data(X_val, low_freq, high_freq, fs)
 		X_te = bandpass_filter_data(X_te, low_freq, high_freq, fs)
 
-	if normalize:
-		X_tr = normalize_data(X_tr)
-		X_val = normalize_data(X_val)
-		X_te = normalize_data(X_te)
 
 	return X_tr.to(torch.float32), Y_tr.to(torch.float32), X_val.to(torch.float32), Y_val.to(torch.float32), X_te.to(torch.float32), Y_te.to(torch.float32)
 
 
 
-def get_broad_data(subject_list, bandpass_filter=False, normalize=False, excluded=[], augment=False):
+def get_broad_data(subject_list, bandpass_filter=False, excluded=[], augment=False):
 
-	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded, augment=augment)
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_split_data(subject_list[0], bandpass_filter=bandpass_filter, excluded=excluded, augment=augment)
 	arr = [X_tr, Y_tr, X_val, Y_val, X_te, Y_te]
 	
 
 	for i in range(1, len(subject_list)):
-		X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei = get_split_data(subject_list[i], bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded, augment=augment)
+		X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei = get_split_data(subject_list[i], bandpass_filter=bandpass_filter, excluded=excluded, augment=augment)
 		brr = [X_tri, Y_tri, X_vali, Y_vali, X_tei, Y_tei]
 
 		for j in range(len(arr)):
 			arr[j] = torch.cat((arr[j], brr[j]), 0)
-
+	
 	print(f'Acquired {arr[0].shape[0]} data points from subjects {subject_list}.')
 	return arr
 
@@ -253,11 +243,20 @@ def bandpass_filter_data(data, low, high, fs, order=5):
 	return torch.from_numpy(arr.copy())
 
 
-def normalize_data(data):
-	mu = torch.mean(data, -1, keepdim=True)
-	sigma = torch.std(data, -1, keepdim=True)
+def normalize_data(X_tr, X_val, X_te, other):
 
-	return (data - mu) / sigma
+	N_ch = X_tr.shape[2]
+
+	for j in range(N_ch):
+		
+		mu = torch.mean(X_tr[:, 0, j, :])
+		sigma = torch.std(X_tr[:, 0, j, :])
+
+		X_tr[:, 0, j, :] = (X_tr[:, 0, j, :] - mu) / sigma
+		X_val[:, 0, j, :] = (X_val[:, 0, j, :] - mu) / sigma
+		X_te[:, 0, j, :] = (X_te[:, 0, j, :] - mu) / sigma
+
+	return X_tr, X_val, X_te
 
 
 def exclude_categories(X, Y, excluded):
@@ -271,7 +270,8 @@ def exclude_categories(X, Y, excluded):
 
 # --------------------------------------------------- SPECTROGRAM -------------------------------------------------------------------------
 
+#X_tr, _, X_val, _, X_te, _ = get_split_data(1)
 
-
+#normalize_data(X_tr, X_val, X_te)
 
 

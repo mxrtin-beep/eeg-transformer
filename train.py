@@ -19,19 +19,19 @@ from model import ContinuousTransformer
 # 	Play with batch_size, d_model, nhead, dim_ffwd, dropout, optimizer
 
 
-model_number = 3
+model_number = 4
 learning_rate = 0.00002
 validate_fraction = 100
 
-normalize = True
+normalize = False
 bandpass_filter = False
-augment = True
+augment = False
 
 document = True
-print_training_data = False
+print_training_data = True
 
-num_epochs = 10000
-batch_size = 32
+num_epochs = 8000
+batch_size = 64
 
 optimizer_name = 'adam'
 
@@ -42,7 +42,7 @@ excluded_y = []
 
 
 print('Building Transformer Model...')
-model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=16, dim_feedforward=32, dropout=0.2, n_classes=4)
+model = ContinuousTransformer(in_channels=1, out_channels=8, d_model=16, nhead=8, dim_feedforward=32, dropout=0.2, n_classes=4)
 
 
 def get_data(s, bandpass_filter, normalize, excluded_y, augment):
@@ -51,7 +51,7 @@ def get_data(s, bandpass_filter, normalize, excluded_y, augment):
 	print(f'Normalizing: {normalize}.')
 	print(f'Augmenting: {augment}.')
 	
-	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=s, bandpass_filter=bandpass_filter, normalize=normalize, excluded=excluded_y, augment=augment)
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_broad_data(subject_list=s, bandpass_filter=bandpass_filter, excluded=excluded_y, augment=augment)
 
 
 	print(f'Excluding Y categories {excluded_y}...')
@@ -60,13 +60,19 @@ def get_data(s, bandpass_filter, normalize, excluded_y, augment):
 	X_te, Y_te = pro.exclude_categories(X_te, Y_te, excluded_y)
 
 
-	#X_tr, Y_tr, X_val, Y_val, X_te, Y_te = pro.get_split_data(subject_id=1)
 	print('Input Shape: ', X_tr.shape)
 
-	X_tr, Y_tr = pro.shuffle(X_tr, Y_tr)
-	X_val, Y_val = pro.shuffle(X_val, Y_val)
-	X_te, Y_te = pro.shuffle(X_te, Y_te)
+	#X_tr, Y_tr = pro.shuffle(X_tr, Y_tr)
+	#X_val, Y_val = pro.shuffle(X_val, Y_val)
+	#X_te, Y_te = pro.shuffle(X_te, Y_te)
 
+	print(X_tr.shape, X_val.shape, X_te.shape)
+
+	if normalize:
+		X_tr, X_val, X_te = pro.normalize_data(X_tr, X_val, X_te)
+
+	print(X_tr.shape, X_val.shape, X_te.shape)
+	
 	return X_tr, Y_tr, X_val, Y_val, X_te, Y_te
 
 
@@ -117,26 +123,34 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 	print('Creating Notes File...')
 	if document: doc.create_notes_file(model_number, model, learning_rate, normalize, bandpass_filter, num_epochs, batch_size, excluded_y)
 
-	save = True
+	save = False
 
 	if save:
-		print('Creating Dataset...')
+
 		X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_data(subjects, bandpass_filter, normalize, excluded_y, augment)
 
+		print('Creating Dataset...')
+		
 		torch.save(X_tr, 'X_tr.pt')
 		torch.save(Y_tr, 'Y_tr.pt')
 		torch.save(X_val, 'X_val.pt')
 		torch.save(Y_val, 'Y_val.pt')
+		torch.save(X_te, 'X_te.pt')
+		torch.save(Y_te, 'Y_te.pt')
 
-	else:
-		X_tr = torch.load('X_tr.pt')
-		Y_tr = torch.load('Y_tr.pt')
-		X_val = torch.load('X_val.pt')
-		Y_val = torch.load('Y_val.pt')
+	X_tr = torch.load('X_tr.pt')
+	Y_tr = torch.load('Y_tr.pt')
+	X_val = torch.load('X_val.pt')
+	Y_val = torch.load('Y_val.pt')
+	X_te = torch.load('X_te.pt')
+	Y_te = torch.load('Y_te.pt')
 
-		X_val = X_val[:int(len(X_val) / 10)]
-		Y_val = Y_val[:int(len(Y_val) / 10)]
-		assert(len(X_val) == len(Y_val))
+	X_val = X_val[:int(len(X_val) / 5)]
+	Y_val = Y_val[:int(len(Y_val) / 5)]
+	assert(len(X_val) == len(Y_val))
+
+	X_tr, Y_tr, X_val, Y_val, X_te, Y_te = get_data(subjects, bandpass_filter, normalize, excluded_y, augment)
+
 
 	if optimizer_name == 'adam':
 		optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -151,14 +165,14 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 
 		
 		
-		if epoch == 0 or (epoch + 1) % (int(num_epochs / validate_fraction)) == 0:
+		if epoch == 0 or (epoch + 1) % validate_fraction == 0:
 			print(f"[Epoch {epoch + 1} / {num_epochs}]")
 
 			model.eval()
 			with torch.no_grad():
 
 				if print_training_data:
-					ix = torch.randint(0, X_tr.shape[0], (batch_size*3, ))
+					ix = torch.randint(0, X_tr.shape[0], (batch_size*5, ))
 					Xb, Yb = X_tr[ix], Y_tr[ix]
 					train_preds = model(Xb)
 
@@ -211,6 +225,13 @@ def train(model, model_number, num_epochs, batch_size, optimizer_name, learning_
 
 
 train(model, model_number, num_epochs, batch_size, optimizer_name, learning_rate, subjects, bandpass_filter, normalize, excluded_y, document=True, print_training_data=True, validate_fraction=100, save_charts=True)
+train(model, 5, num_epochs, batch_size, optimizer_name, learning_rate, subjects, bandpass_filter, True, excluded_y, document=True, print_training_data=True, validate_fraction=100, save_charts=True)
+#train(model, 6, num_epochs, batch_size, optimizer_name, learning_rate, subjects, bandpass_filter, True, excluded_y, document=True, print_training_data=True, validate_fraction=100, save_charts=True)
+#train(model, 7, num_epochs, batch_size, optimizer_name, learning_rate, subjects, bandpass_filter, True, excluded_y, document=True, print_training_data=True, validate_fraction=100, save_charts=True)
+
+
+
+
 #torch.save(model.state_dict(), 'models/models_' + str(model_number) + '/model_1.pth')
 
 '''
