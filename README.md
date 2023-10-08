@@ -7,5 +7,5 @@ Motor Imagery is one of the most powerful inputs in the world of Brain-Computer 
 Transformers represent an exciting opportunity to improve classification over current methods. I attempted to emulate and modify this paper's strategy, which first employs convolutional layers to reduce the signal into a few elements, and then utilizes self-attention and temporal convolution to produce predictions. This paper uses TensorFlow. Here, I try to paraphrase the strategy into PyTorch and make it more customizable.
 
 # The Model
+![alt text](https://mxrtin-beep.github.io/images/atcnet.png)
 
-https://mxrtin-beep.github.io/images/atcnet.png![image](https://github.com/mxrtin-beep/eeg-transformer/assets/52719688/0e774f17-2c69-463c-a20f-06b921a6effc)
